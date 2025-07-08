@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, CheckCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
-import useReserveForm from "./_hooks/use-reserve-form";
+import useReservationForm from "./_hooks/use-reservation-form";
 
 export default function ReservePage() {
   const {
@@ -19,7 +19,7 @@ export default function ReservePage() {
     selectedInterests,
     interestOptions,
     onSubmit,
-  } = useReserveForm();
+  } = useReservationForm();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">

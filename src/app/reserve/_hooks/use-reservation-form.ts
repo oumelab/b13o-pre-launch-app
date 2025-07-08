@@ -1,15 +1,15 @@
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import {useRouter} from "next/navigation";
+import {toast} from "sonner";
 import {
   reservationSchema,
   type ReservationFormData,
   interestOptions,
 } from "@/lib/schemas";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { useState } from "react";
+import {zodResolver} from "@hookform/resolvers/zod";
+import {useForm} from "react-hook-form";
+import {useState} from "react";
 
-export default function useReserveForm() {
+export default function useReservationForm() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
@@ -17,7 +17,7 @@ export default function useReserveForm() {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: {errors},
     setValue,
     watch,
   } = useForm<ReservationFormData>({
@@ -101,7 +101,6 @@ export default function useReserveForm() {
       });
 
       router.push("/confirmation");
-
     } catch (error) {
       console.error("Submission error:", error);
       toast.error("エラー", {
