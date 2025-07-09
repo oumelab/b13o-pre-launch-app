@@ -29,35 +29,9 @@ const features = [
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <>
       {/* ナビゲーション */}
-      <nav className="border-b border-slate-800/50 backdrop-blur-sm bg-slate-900/80 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
-              <span className="text-2xl">🔥</span>
-              <span className="text-xl font-bold text-white">
-                もくもくReact
-              </span>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Button
-                asChild
-                variant="ghost"
-                className="text-slate-300 hover:opacity-80 rounded-full"
-              >
-                <Link href="/admin">管理画面</Link>
-              </Button>
-              <Button
-                asChild
-                className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:opacity-80 rounded-full"
-              >
-                <Link href="/reserve">事前登録する</Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </nav>
+     
 
       {/* ヒーローセクション */}
       <section className="relative overflow-hidden">
@@ -150,7 +124,7 @@ export default function LandingPage() {
       </section>
 
       {/* フッター */}
-      <footer className="border-t border-slate-800/50 py-12">
+      {/* <footer className="border-t border-slate-800/50 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-2 mb-4 md:mb-0">
@@ -164,7 +138,7 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
-      </footer>
-    </div>
+      </footer> */}
+      </>
   );
 }

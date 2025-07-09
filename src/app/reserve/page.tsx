@@ -5,8 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, CheckCircle, Loader2 } from "lucide-react";
-import Link from "next/link";
+import { CheckCircle, Loader2 } from "lucide-react";
 import useReservationForm from "./_hooks/use-reservation-form";
 
 export default function ReservePage() {
@@ -22,22 +21,7 @@ export default function ReservePage() {
   } = useReservationForm();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      {/* ナビゲーション */}
-      <nav className="border-b border-slate-800/50 backdrop-blur-sm bg-slate-900/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center space-x-2">
-              <ArrowLeft className="h-5 w-5 text-slate-400" />
-              <span className="text-2xl">🔥</span>
-              <span className="text-xl font-bold text-white">
-                もくもくReact
-              </span>
-            </Link>
-          </div>
-        </div>
-      </nav>
-
+    <>
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
@@ -151,6 +135,6 @@ export default function ReservePage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </>
   );
 }

@@ -16,3 +16,6 @@ export interface Notification {
   isRead: boolean;
   createdAt: string;
 }
+
+// ナビゲーションバーのタイプ(ヘッダーで使用 - トップページ、デフォルト、管理画面)
+export type NavigationType = 'home' | 'default' | 'admin';

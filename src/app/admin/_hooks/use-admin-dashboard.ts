@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Notification, Reservation } from "@/lib/types";
-import { interestOptions } from "@/lib/schemas";
+import {useState, useEffect} from "react";
+import {Notification, Reservation} from "@/lib/types";
+import {interestOptions} from "@/lib/schemas";
 
 /**
  * 興味カテゴリIDから表示用ラベルを取得する
@@ -39,7 +39,7 @@ const calculateStats = (reservations: Reservation[]) => {
       }, {} as Record<string, number>)
     ).sort(([, a], [, b]) => b - a)[0]?.[0] || "N/A";
 
-  return { total, thisWeek, mostPopularInterest };
+  return {total, thisWeek, mostPopularInterest};
 };
 
 /**
@@ -57,15 +57,42 @@ export const useAdminDashboard = () => {
 
   // 初期データ読み込み：LocalStorageから保存されたデータを取得
   useEffect(() => {
-    const reservationsData = localStorage.getItem("reservations");
-    if (reservationsData) {
-      setReservations(JSON.parse(reservationsData));
-    }
+    const loadData = () => {
+      const reservationsData = localStorage.getItem("reservations");
+      if (reservationsData) {
+        setReservations(JSON.parse(reservationsData));
+      }
 
-    const notificationsData = localStorage.getItem("notifications");
-    if (notificationsData) {
-      setNotifications(JSON.parse(notificationsData));
-    }
+      const notificationsData = localStorage.getItem("notifications");
+      if (notificationsData) {
+        setNotifications(JSON.parse(notificationsData));
+      }
+    };
+
+    // マウント時にデータを読み込む
+    loadData();
+
+    // LocalStorage変更イベントをリッスン（他のページ・コンポーネントからの変更を検知）
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === "reservations" || event.key === "notifications") {
+        loadData();
+      }
+    };
+
+    // カスタムイベントをリッスン（同一ページ内での変更を検知）
+    const handleCustomStorageChange = () => {
+      loadData();
+    };
+
+    // イベントリスナーを設定
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("localStorageUpdate", handleCustomStorageChange);
+
+    // クリーンアップ：イベントリスナーを解除
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("localStorageUpdate", handleCustomStorageChange);
+    };
   }, []);
 
   /**
@@ -74,11 +101,14 @@ export const useAdminDashboard = () => {
   const markNotificationAsRead = (notificationId: string) => {
     const updatedNotifications = notifications.map((notification) =>
       notification.id === notificationId
-        ? { ...notification, isRead: true }
+        ? {...notification, isRead: true}
         : notification
     );
     setNotifications(updatedNotifications);
     localStorage.setItem("notifications", JSON.stringify(updatedNotifications));
+
+    // カスタムイベントを発火
+    window.dispatchEvent(new Event("localStorageUpdate"));
   };
 
   /**
@@ -91,6 +121,9 @@ export const useAdminDashboard = () => {
     }));
     setNotifications(updatedNotifications);
     localStorage.setItem("notifications", JSON.stringify(updatedNotifications));
+
+    // カスタムイベントを発火
+    window.dispatchEvent(new Event("localStorageUpdate"));
   };
 
   // ページネーション計算：パフォーマンスを考慮して表示件数を制限

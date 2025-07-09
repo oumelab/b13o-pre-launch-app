@@ -7,33 +7,32 @@
  * 統計情報の表示、登録者一覧の表示、通知機能などを提供します。
  */
 
-import { AdminNavigation } from "./_components/admin-navigation";
 import { DashboardContent } from "./_components/dashboard-content";
 import { useAdminDashboard } from "./_hooks/use-admin-dashboard";
 
 export default function AdminDashboard() {
   const {
     reservations,
-    notifications,
+    // notifications,
     paginatedReservations,
     stats,
-    unreadNotifications,
+    // unreadNotifications,
     currentPage,
     totalPages,
     setCurrentPage,
-    markNotificationAsRead,
-    markAllAsRead,
+    // markNotificationAsRead,
+    // markAllAsRead,
     getInterestLabel,
   } = useAdminDashboard();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      <AdminNavigation
+    <>
+      {/* <AdminNavigation
         notifications={notifications}
         unreadNotifications={unreadNotifications}
         onMarkAsRead={markNotificationAsRead}
         onMarkAllAsRead={markAllAsRead}
-      />
+      /> */}
 
       <DashboardContent
         reservations={reservations}
@@ -44,6 +43,6 @@ export default function AdminDashboard() {
         onPageChange={setCurrentPage}
         getInterestLabel={getInterestLabel}
       />
-    </div>
+    </>
   );
 }
