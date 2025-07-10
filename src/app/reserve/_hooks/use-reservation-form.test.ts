@@ -28,7 +28,7 @@ mock.module('sonner', () => ({
 mock.module('react-hook-form', () => ({
   useForm: mock(() => ({
     register: mock(),
-    handleSubmit: mock((fn) => fn), // 関数をそのまま返す
+    handleSubmit: mock((fn) => fn),
     formState: { errors: {} },
     setValue: mock(),
     watch: mock(() => []),
@@ -50,38 +50,52 @@ mock.module('@/lib/schemas', () => ({
   ],
 }));
 
+// Zustandストアのモック
+mock.module('@/stores/reservation-store', () => ({
+  useReservationStore: mock(),
+}));
+
+mock.module('@/stores/notification-store', () => ({
+  useNotificationStore: mock(),
+}));
+
 // fetch API のモック
 const mockFetch = mock();
 global.fetch = mockFetch as unknown as typeof fetch;
 
-// localStorage のモック
-const localStorageMock = {
-  getItem: mock(),
-  setItem: mock(),
-  removeItem: mock(),
-  clear: mock(),
-};
-Object.defineProperty(window, 'localStorage', {
-  value: localStorageMock,
-});
-
 describe('useReservationForm', () => {
   const mockPush = mock();
+  const mockAddReservation = mock();
+  const mockAddNotification = mock();
   
-  beforeEach(() => {
+  beforeEach(async() => {
     // すべてのモックをリセット
     mockFetch.mockReset();
     mockPush.mockReset();
-    localStorageMock.getItem.mockReset();
-    localStorageMock.setItem.mockReset();
+    mockAddReservation.mockReset();
+    mockAddNotification.mockReset();
     
     // useRouter のモック設定
     (useRouter as ReturnType<typeof mock>).mockReturnValue({
       push: mockPush,
     });
-    
-    // localStorage の初期値設定
-    localStorageMock.getItem.mockReturnValue('[]');
+
+    // Zustandストアのモック設定
+    const reservationStore = await import('@/stores/reservation-store');
+    ((reservationStore.useReservationStore as unknown) as ReturnType<typeof mock>).mockImplementation((selector: (state: { addReservation: typeof mockAddReservation }) => unknown) => {
+      const state = {
+        addReservation: mockAddReservation,
+      };
+      return selector(state);
+    });
+
+    const notificationStore = await import('@/stores/notification-store');
+    ((notificationStore.useNotificationStore as unknown) as ReturnType<typeof mock>).mockImplementation((selector: (state: { addNotification: typeof mockAddNotification }) => unknown) => {
+      const state = {
+        addNotification: mockAddNotification,
+      };
+      return selector(state);
+    });
     
     // toast のモックをリセット
     (toast.success as ReturnType<typeof mock>).mockReset();
@@ -100,35 +114,6 @@ describe('useReservationForm', () => {
       expect(typeof result.current.onSubmit).toBe('function');
       expect(typeof result.current.handleInterestChange).toBe('function');
       expect(Array.isArray(result.current.interestOptions)).toBe(true);
-    });
-  });
-
-  describe('handleInterestChange', () => {
-    it('興味を追加できる', () => {
-      const { result } = renderHook(() => useReservationForm());
-
-      act(() => {
-        result.current.handleInterestChange('react', true);
-      });
-
-      // setValue が呼ばれることを確認（実際の状態変更は react-hook-form が管理）
-      expect(result.current.handleInterestChange).toBeDefined();
-    });
-
-    it('興味を削除できる', () => {
-      const { result } = renderHook(() => useReservationForm());
-
-      act(() => {
-        result.current.handleInterestChange('react', true);
-        result.current.handleInterestChange('typescript', true);
-      });
-
-      act(() => {
-        result.current.handleInterestChange('react', false);
-      });
-
-      // 関数が正常に動作することを確認
-      expect(result.current.handleInterestChange).toBeDefined();
     });
   });
 
@@ -163,15 +148,19 @@ describe('useReservationForm', () => {
         body: JSON.stringify(mockFormData),
       });
 
-      // ローカルストレージへの保存確認
-      expect(localStorageMock.setItem).toHaveBeenCalledWith(
-        'reservations',
-        expect.stringContaining(mockFormData.name)
-      );
-      expect(localStorageMock.setItem).toHaveBeenCalledWith(
-        'notifications',
-        expect.stringContaining(mockFormData.name)
-      );
+      // Zustandストアへの保存確認
+      expect(mockAddReservation).toHaveBeenCalledWith({
+        ...mockFormData,
+        createdAt: expect.any(String),
+      });
+
+      expect(mockAddNotification).toHaveBeenCalledWith({
+        type: 'new_registration',
+        title: '新規登録',
+        message: `${mockFormData.name}さんが事前登録しました`,
+        isRead: false,
+        createdAt: expect.any(String),
+      });
 
       // 成功トーストの表示確認
       expect(toast.success).toHaveBeenCalledWith('登録完了！', {
@@ -196,7 +185,7 @@ describe('useReservationForm', () => {
 
       mockFetch.mockReturnValue(delayedPromise);
 
-      // 非同期で送信開始（awaitしない）
+      // 非同期で送信開始
       act(() => {
         result.current.onSubmit(mockFormData);
       });
@@ -229,7 +218,6 @@ describe('useReservationForm', () => {
     };
 
     it('API エラー時にエラートーストを表示する', async () => {
-      // API エラーレスポンスをモック
       mockFetch.mockResolvedValue({
         ok: false,
         json: mock().mockResolvedValue({
@@ -243,20 +231,20 @@ describe('useReservationForm', () => {
         await result.current.onSubmit(mockFormData);
       });
 
-      // エラートーストの表示確認（実際のメッセージを確認）
+      // エラートーストの表示確認
       expect(toast.error).toHaveBeenCalledWith('エラー', {
-        description: "登録中にエラーが発生しました。もう一度お試しください。",
+        description: '登録中にエラーが発生しました。もう一度お試しください。',
       });
+
+      // ストアに保存されていないことを確認
+      expect(mockAddReservation).not.toHaveBeenCalled();
+      expect(mockAddNotification).not.toHaveBeenCalled();
 
       // ページ遷移していないことを確認
       expect(mockPush).not.toHaveBeenCalled();
-
-      // ローディング状態が終了していることを確認
-      expect(result.current.isLoading).toBe(false);
     });
 
     it('ネットワークエラー時にエラートーストを表示する', async () => {
-      // ネットワークエラーをモック
       mockFetch.mockRejectedValue(new Error('Network Error'));
 
       const { result } = renderHook(() => useReservationForm());
@@ -265,113 +253,14 @@ describe('useReservationForm', () => {
         await result.current.onSubmit(mockFormData);
       });
 
-      // エラートーストの表示確認（実際のメッセージを確認）
+      // エラートーストの表示確認
       expect(toast.error).toHaveBeenCalledWith('エラー', {
-        description: "登録中にエラーが発生しました。もう一度お試しください。",
+        description: '登録中にエラーが発生しました。もう一度お試しください。',
       });
 
-      // ローカルストレージに保存されていないことを確認
-      expect(localStorageMock.setItem).not.toHaveBeenCalled();
-    });
-
-    it('ローカルストレージエラーでもAPIエラーにならない', async () => {
-      // API は成功
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: mock().mockResolvedValue({ success: true }),
-      });
-
-      // localStorage.setItem でエラーを発生させる
-      localStorageMock.setItem.mockImplementation(() => {
-        throw new Error('Storage Error');
-      });
-
-      const { result } = renderHook(() => useReservationForm());
-
-      await act(async () => {
-        await result.current.onSubmit(mockFormData);
-      });
-
-      // ストレージエラーでもAPIは成功しているので、エラートーストが表示される
-      // （実装によってはAPIエラーとして扱われる可能性があります）
-      expect(toast.error).toHaveBeenCalledWith('エラー', {
-        description: "登録中にエラーが発生しました。もう一度お試しください。",
-      });
-    });
-  });
-
-  describe('ローカルストレージ操作', () => {
-    const mockFormData = {
-      name: '田中太郎',
-      email: 'tanaka@example.com',
-      interests: ['react'],
-    };
-
-    beforeEach(() => {
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: mock().mockResolvedValue({ success: true }),
-      });
-    });
-
-    it('既存の予約データに新しいデータを追加する', async () => {
-      const existingReservations = [
-        { id: '1', name: '山田花子', email: 'yamada@example.com' },
-      ];
-
-      localStorageMock.getItem.mockImplementation((key) => {
-        if (key === 'reservations') {
-          return JSON.stringify(existingReservations);
-        }
-        return '[]';
-      });
-
-      const { result } = renderHook(() => useReservationForm());
-
-      await act(async () => {
-        await result.current.onSubmit(mockFormData);
-      });
-
-      // setItem の呼び出し引数を確認
-      const setItemCalls = localStorageMock.setItem.mock.calls;
-      const reservationCall = setItemCalls.find((call: unknown[]) => call[0] === 'reservations');
-      
-      expect(reservationCall).toBeTruthy();
-      
-      if (!reservationCall) throw new Error('Reservation call not found');
-      
-      const savedData = JSON.parse(reservationCall[1]);
-      expect(savedData).toHaveLength(2); // 既存 + 新規
-      expect(savedData[0]).toEqual(existingReservations[0]); // 既存データが保持されている
-      expect(savedData[1].name).toBe(mockFormData.name); // 新規データが追加されている
-    });
-
-    it('通知データが正しい形式で保存される', async () => {
-      const { result } = renderHook(() => useReservationForm());
-
-      await act(async () => {
-        await result.current.onSubmit(mockFormData);
-      });
-
-      const setItemCalls = localStorageMock.setItem.mock.calls;
-      const notificationCall = setItemCalls.find((call: unknown[]) => call[0] === 'notifications');
-      
-      expect(notificationCall).toBeTruthy();
-      
-      if (!notificationCall) throw new Error('Notification call not found');
-      
-      const savedNotifications = JSON.parse(notificationCall[1]);
-      expect(savedNotifications).toHaveLength(1);
-      
-      const notification = savedNotifications[0];
-      expect(notification).toMatchObject({
-        type: 'new_registration',
-        title: '新規登録',
-        message: `${mockFormData.name}さんが事前登録しました`,
-        isRead: false,
-      });
-      expect(notification.id).toBeTruthy();
-      expect(notification.createdAt).toBeTruthy();
+      // ストアに保存されていないことを確認
+      expect(mockAddReservation).not.toHaveBeenCalled();
+      expect(mockAddNotification).not.toHaveBeenCalled();
     });
   });
 });

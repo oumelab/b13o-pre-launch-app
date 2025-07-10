@@ -1,5 +1,15 @@
-import { renderHook, act } from '@testing-library/react'
-import { useAdminDashboard } from './use-admin-dashboard'
+import { renderHook, act } from '@testing-library/react';
+import { beforeEach, describe, expect, it, mock } from 'bun:test';
+import { useAdminDashboard } from './use-admin-dashboard';
+
+// Zustandストアのモック
+mock.module('@/stores/reservation-store', () => ({
+  useReservationStore: mock(),
+}));
+
+mock.module('@/stores/notification-store', () => ({
+  useNotificationStore: mock(),
+}));
 
 // モックデータ
 const mockReservations = [
@@ -17,118 +27,153 @@ const mockReservations = [
     interests: ['programming'],
     createdAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(), // 8日前
   },
-]
+];
 
 const mockNotifications = [
   {
     id: '1',
-    type: 'new_reservation' as const,
+    type: 'new_registration',
+    title: '新規登録',
     message: '新しい事前登録がありました',
     isRead: false,
     createdAt: new Date().toISOString(),
   },
   {
     id: '2',
-    type: 'new_reservation' as const,
+    type: 'new_registration',
+    title: '新規登録',
     message: '新しい事前登録がありました',
     isRead: true,
     createdAt: new Date().toISOString(),
   },
-]
+];
 
 describe('useAdminDashboard', () => {
-  beforeEach(() => {
-    // LocalStorageをクリア
-    localStorage.clear()
-  })
+  const mockMarkAsRead = mock();
+  const mockMarkAllAsRead = mock();
+  const mockGetUnreadNotifications = mock();
 
-  test('初期状態では空のデータを返す', () => {
-    const { result } = renderHook(() => useAdminDashboard())
+  beforeEach(async () => {
+    // モックをリセット
+    mockMarkAsRead.mockReset();
+    mockMarkAllAsRead.mockReset();
+    mockGetUnreadNotifications.mockReset();
 
-    expect(result.current.reservations).toEqual([])
-    expect(result.current.notifications).toEqual([])
-    expect(result.current.stats.total).toBe(0)
-    expect(result.current.stats.thisWeek).toBe(0)
-    expect(result.current.stats.mostPopularInterest).toBe('N/A')
-  })
+    // useReservationStoreのモック設定
+    const reservationStore = await import('@/stores/reservation-store');
+    ((reservationStore.useReservationStore as unknown) as ReturnType<typeof mock>).mockImplementation((selector: (state: { reservations: typeof mockReservations }) => unknown) => {
+      const state = {
+        reservations: mockReservations,
+      };
+      return selector(state);
+    });
 
-  test('LocalStorageからデータを読み込む', () => {
-    // LocalStorageにモックデータを設定
-    localStorage.setItem('reservations', JSON.stringify(mockReservations))
-    localStorage.setItem('notifications', JSON.stringify(mockNotifications))
+    // useNotificationStoreのモック設定
+    const notificationStore = await import('@/stores/notification-store');
+    ((notificationStore.useNotificationStore as unknown) as ReturnType<typeof mock>).mockImplementation((selector: (state: {
+      notifications: typeof mockNotifications;
+      markAsRead: typeof mockMarkAsRead;
+      markAllAsRead: typeof mockMarkAllAsRead;
+      getUnreadNotifications: typeof mockGetUnreadNotifications;
+    }) => unknown) => {
+      const state = {
+        notifications: mockNotifications,
+        markAsRead: mockMarkAsRead,
+        markAllAsRead: mockMarkAllAsRead,
+        getUnreadNotifications: mockGetUnreadNotifications,
+      };
+      return selector(state);
+    });
 
-    const { result } = renderHook(() => useAdminDashboard())
+    // 未読通知のモック
+    mockGetUnreadNotifications.mockReturnValue([mockNotifications[0]]);
+  });
 
-    expect(result.current.reservations).toEqual(mockReservations)
-    expect(result.current.notifications).toEqual(mockNotifications)
-  })
+  describe('初期状態', () => {
+    it('ストアからデータを正しく取得する', () => {
+      const { result } = renderHook(() => useAdminDashboard());
 
-  test('統計を正しく計算する', () => {
-    localStorage.setItem('reservations', JSON.stringify(mockReservations))
+      expect(result.current.reservations).toEqual(mockReservations);
+      expect(result.current.notifications).toEqual(mockNotifications);
+      expect(result.current.unreadNotifications).toEqual([mockNotifications[0]]);
+    });
+  });
 
-    const { result } = renderHook(() => useAdminDashboard())
+  describe('統計計算', () => {
+    it('統計を正しく計算する', () => {
+      const { result } = renderHook(() => useAdminDashboard());
 
-    expect(result.current.stats.total).toBe(2)
-    expect(result.current.stats.thisWeek).toBe(1) // 今週は1件
-    expect(result.current.stats.mostPopularInterest).toBe('programming')
-  })
+      expect(result.current.stats.total).toBe(2);
+      expect(result.current.stats.thisWeek).toBe(1); // 今週は1件
+      expect(result.current.stats.mostPopularInterest).toBe('programming');
+    });
 
-  test('通知を既読にマークできる', () => {
-    localStorage.setItem('notifications', JSON.stringify(mockNotifications))
+    it('データが空の場合の統計', async () => {
+      // 空のデータでモック
+      const reservationStore = await import('@/stores/reservation-store');
+      ((reservationStore.useReservationStore as unknown) as ReturnType<typeof mock>).mockImplementation((selector: (state: { reservations: never[] }) => unknown) => {
+        const state = { reservations: [] };
+        return selector(state);
+      });
 
-    const { result } = renderHook(() => useAdminDashboard())
+      const { result } = renderHook(() => useAdminDashboard());
 
-    act(() => {
-      result.current.markNotificationAsRead('1')
-    })
+      expect(result.current.stats.total).toBe(0);
+      expect(result.current.stats.thisWeek).toBe(0);
+      expect(result.current.stats.mostPopularInterest).toBe('N/A');
+    });
+  });
 
-    const updatedNotification = result.current.notifications.find(n => n.id === '1')
-    expect(updatedNotification?.isRead).toBe(true)
-  })
+  describe('通知管理', () => {
+    it('通知を既読にマークできる', () => {
+      const { result } = renderHook(() => useAdminDashboard());
 
-  test('全ての通知を既読にマークできる', () => {
-    localStorage.setItem('notifications', JSON.stringify(mockNotifications))
+      act(() => {
+        result.current.markNotificationAsRead('1');
+      });
 
-    const { result } = renderHook(() => useAdminDashboard())
+      expect(mockMarkAsRead).toHaveBeenCalledWith('1');
+    });
 
-    act(() => {
-      result.current.markAllAsRead()
-    })
+    it('全ての通知を既読にマークできる', () => {
+      const { result } = renderHook(() => useAdminDashboard());
 
-    const allRead = result.current.notifications.every(n => n.isRead)
-    expect(allRead).toBe(true)
-  })
+      act(() => {
+        result.current.markAllAsRead();
+      });
 
-  test('ページネーションが正しく動作する', () => {
-    const manyReservations = Array.from({ length: 25 }, (_, i) => ({
-      id: `${i + 1}`,
-      name: `テスト${i + 1}`,
-      email: `test${i + 1}@example.com`,
-      interests: ['programming'],
-      createdAt: new Date().toISOString(),
-    }))
+      expect(mockMarkAllAsRead).toHaveBeenCalled();
+    });
+  });
 
-    localStorage.setItem('reservations', JSON.stringify(manyReservations))
+  describe('ページネーション', () => {
+    it('ページネーションが正しく動作する', async () => {
+      // 多数のデータでテスト
+      const manyReservations = Array.from({ length: 25 }, (_, i) => ({
+        id: `${i + 1}`,
+        name: `テスト${i + 1}`,
+        email: `test${i + 1}@example.com`,
+        interests: ['programming'],
+        createdAt: new Date().toISOString(),
+      }));
 
-    const { result } = renderHook(() => useAdminDashboard())
+      const reservationStore = await import('@/stores/reservation-store');
+      ((reservationStore.useReservationStore as unknown) as ReturnType<typeof mock>).mockImplementation((selector: (state: { reservations: typeof manyReservations }) => unknown) => {
+        const state = { reservations: manyReservations };
+        return selector(state);
+      });
 
-    expect(result.current.totalPages).toBe(3) // 25件 ÷ 10件/ページ = 3ページ
-    expect(result.current.paginatedReservations).toHaveLength(10)
+      const { result } = renderHook(() => useAdminDashboard());
 
-    act(() => {
-      result.current.setCurrentPage(2)
-    })
+      expect(result.current.totalPages).toBe(3); // 25件 ÷ 10件/ページ = 3ページ
+      expect(result.current.paginatedReservations).toHaveLength(10);
 
-    expect(result.current.currentPage).toBe(2)
-    expect(result.current.paginatedReservations).toHaveLength(10)
-  })
+      act(() => {
+        result.current.setCurrentPage(2);
+      });
 
-  test('未読通知をフィルタリングできる', () => {
-    localStorage.setItem('notifications', JSON.stringify(mockNotifications))
-
-    const { result } = renderHook(() => useAdminDashboard())
-
-    expect(result.current.unreadNotifications).toHaveLength(1)
-    expect(result.current.unreadNotifications[0].id).toBe('1')
-  })
-})
+      expect(result.current.currentPage).toBe(2);
+      expect(result.current.paginatedReservations).toHaveLength(10);
+    });
+  });
+});
