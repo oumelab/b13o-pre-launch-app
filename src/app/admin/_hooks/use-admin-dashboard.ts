@@ -1,9 +1,10 @@
 "use client";
 
-import {useState, useEffect} from "react";
-import {Notification, Reservation} from "@/lib/types";
-import {interestOptions} from "@/lib/schemas";
-
+import { interestOptions } from "@/lib/schemas";
+import { Reservation } from "@/lib/types";
+import { useNotificationStore } from '@/stores/notification-store';
+import { useReservationStore } from "@/stores/reservation-store";
+import { useState } from "react";
 /**
  * 興味カテゴリIDから表示用ラベルを取得する
  */
@@ -49,82 +50,20 @@ const calculateStats = (reservations: Reservation[]) => {
  * 統合的に提供します。データはLocalStorageを使用してクライアントサイドで
  * 保持されます。
  */
+
 export const useAdminDashboard = () => {
-  const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // 初期データ読み込み：LocalStorageから保存されたデータを取得
-  useEffect(() => {
-    const loadData = () => {
-      const reservationsData = localStorage.getItem("reservations");
-      if (reservationsData) {
-        setReservations(JSON.parse(reservationsData));
-      }
+  // 予約ストアから取得
+  const reservations = useReservationStore(state => state.reservations);
 
-      const notificationsData = localStorage.getItem("notifications");
-      if (notificationsData) {
-        setNotifications(JSON.parse(notificationsData));
-      }
-    };
+  // 通知ストアから取得
+  const notifications = useNotificationStore(state => state.notifications);
+  const markAsRead = useNotificationStore(state => state.markAsRead);
+  const markAllAsRead = useNotificationStore(state => state.markAllAsRead);
+  const getUnreadNotifications = useNotificationStore(state => state.getUnreadNotifications);
 
-    // マウント時にデータを読み込む
-    loadData();
-
-    // LocalStorage変更イベントをリッスン（他のページ・コンポーネントからの変更を検知）
-    const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === "reservations" || event.key === "notifications") {
-        loadData();
-      }
-    };
-
-    // カスタムイベントをリッスン（同一ページ内での変更を検知）
-    const handleCustomStorageChange = () => {
-      loadData();
-    };
-
-    // イベントリスナーを設定
-    window.addEventListener("storage", handleStorageChange);
-    window.addEventListener("localStorageUpdate", handleCustomStorageChange);
-
-    // クリーンアップ：イベントリスナーを解除
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      window.removeEventListener("localStorageUpdate", handleCustomStorageChange);
-    };
-  }, []);
-
-  /**
-   * 特定の通知を既読にマークする
-   */
-  const markNotificationAsRead = (notificationId: string) => {
-    const updatedNotifications = notifications.map((notification) =>
-      notification.id === notificationId
-        ? {...notification, isRead: true}
-        : notification
-    );
-    setNotifications(updatedNotifications);
-    localStorage.setItem("notifications", JSON.stringify(updatedNotifications));
-
-    // カスタムイベントを発火
-    window.dispatchEvent(new Event("localStorageUpdate"));
-  };
-
-  /**
-   * 全ての通知を既読にマークする
-   */
-  const markAllAsRead = () => {
-    const updatedNotifications = notifications.map((notification) => ({
-      ...notification,
-      isRead: true,
-    }));
-    setNotifications(updatedNotifications);
-    localStorage.setItem("notifications", JSON.stringify(updatedNotifications));
-
-    // カスタムイベントを発火
-    window.dispatchEvent(new Event("localStorageUpdate"));
-  };
 
   // ページネーション計算：パフォーマンスを考慮して表示件数を制限
   const totalPages = Math.ceil(reservations.length / itemsPerPage);
@@ -135,14 +74,16 @@ export const useAdminDashboard = () => {
   );
 
   const stats = calculateStats(reservations);
-  const unreadNotifications = notifications.filter((n) => !n.isRead);
+  const unreadNotifications = getUnreadNotifications();
 
   return {
-    // データ
+    // 予約データ
     reservations,
-    notifications,
     paginatedReservations,
     stats,
+
+    // 通知データ
+    notifications,
     unreadNotifications,
 
     // ページネーション
@@ -151,7 +92,7 @@ export const useAdminDashboard = () => {
     setCurrentPage,
 
     // アクション
-    markNotificationAsRead,
+    markNotificationAsRead: markAsRead,
     markAllAsRead,
 
     // ユーティリティ

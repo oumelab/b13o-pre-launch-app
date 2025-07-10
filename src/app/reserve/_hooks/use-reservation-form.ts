@@ -1,3 +1,5 @@
+import { useReservationStore } from '@/stores/reservation-store';
+import { useNotificationStore } from '@/stores/notification-store';
 import {useRouter} from "next/navigation";
 import {toast} from "sonner";
 import {
@@ -7,11 +9,15 @@ import {
 } from "@/lib/schemas";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {useForm} from "react-hook-form";
-import {useState} from "react";
+import {useCallback, useState} from "react";
 
 export default function useReservationForm() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+
+  // Zustandストアからアクションを取得
+  const addReservation = useReservationStore(state => state.addReservation);
+  const addNotification = useNotificationStore(state => state.addNotification);
 
   // React Hook Formでフォーム管理とバリデーションを設定
   const {
@@ -20,6 +26,7 @@ export default function useReservationForm() {
     formState: {errors},
     setValue,
     watch,
+    reset,
   } = useForm<ReservationFormData>({
     resolver: zodResolver(reservationSchema),
     defaultValues: {
@@ -51,7 +58,7 @@ export default function useReservationForm() {
    * APIエンドポイントへのデータ送信、ローカルストレージへの保存、
    * 管理画面用の通知データ作成を行います。
    */
-  const onSubmit = async (data: ReservationFormData) => {
+  const onSubmit = useCallback(async (data: ReservationFormData)=> {
     setIsLoading(true);
 
     try {
@@ -69,38 +76,29 @@ export default function useReservationForm() {
         throw new Error(errorData.error || "Failed to submit reservation");
       }
 
-      // 管理画面での表示用にローカルストレージに予約データを保存
-      const reservations = JSON.parse(
-        localStorage.getItem("reservations") || "[]"
-      );
-      const newReservation = {
-        id: Date.now().toString(),
+      // Zustandストアに保存（LocalStorageは自動的に同期される）
+      addReservation({
         ...data,
         createdAt: new Date().toISOString(),
-      };
-      reservations.push(newReservation);
-      localStorage.setItem("reservations", JSON.stringify(reservations));
+      });
 
-      // 管理画面の通知用データも作成・保存
-      const notifications = JSON.parse(
-        localStorage.getItem("notifications") || "[]"
-      );
-      const newNotification = {
-        id: Date.now().toString(),
+      addNotification({
         type: "new_registration",
         title: "新規登録",
         message: `${data.name}さんが事前登録しました`,
         isRead: false,
         createdAt: new Date().toISOString(),
-      };
-      notifications.unshift(newNotification); // 新しい通知を先頭に追加
-      localStorage.setItem("notifications", JSON.stringify(notifications));
+      });
 
+
+      // 成功処理
       toast.success("登録完了！", {
         description: "事前登録が完了しました。確認メールをご確認ください。",
       });
 
+      reset();
       router.push("/confirmation");
+
     } catch (error) {
       console.error("Submission error:", error);
       toast.error("エラー", {
@@ -109,7 +107,7 @@ export default function useReservationForm() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [addNotification, addReservation, reset, router]);
 
   return {
     isLoading,
