@@ -1,15 +1,15 @@
-import { useReservationStore } from '@/stores/reservation-store';
-import { useNotificationStore } from '@/stores/notification-store';
-import {useRouter} from "next/navigation";
-import {toast} from "sonner";
 import {
+  interestOptions,
   reservationSchema,
   type ReservationFormData,
-  interestOptions,
 } from "@/lib/schemas";
-import {zodResolver} from "@hookform/resolvers/zod";
-import {useForm} from "react-hook-form";
-import {useCallback, useState} from "react";
+import { useNotificationStore } from '@/stores/notification-store';
+import { useReservationStore } from '@/stores/reservation-store';
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { useNotificationBanner } from '../../hooks/use-notification-banner';
 
 export default function useReservationForm() {
   const [isLoading, setIsLoading] = useState(false);
@@ -18,6 +18,9 @@ export default function useReservationForm() {
   // Zustandストアからアクションを取得
   const addReservation = useReservationStore(state => state.addReservation);
   const addNotification = useNotificationStore(state => state.addNotification);
+
+  // バナー通知フック
+  const { showSuccess, showError } = useNotificationBanner();
 
   // React Hook Formでフォーム管理とバリデーションを設定
   const {
@@ -58,10 +61,11 @@ export default function useReservationForm() {
    * APIエンドポイントへのデータ送信、ローカルストレージへの保存、
    * 管理画面用の通知データ作成を行います。
    */
-  const onSubmit = useCallback(async (data: ReservationFormData)=> {
+  const onSubmit = async (data: ReservationFormData)=> {
     setIsLoading(true);
 
     try {
+     
       // 予約APIエンドポイントにデータを送信
       const response = await fetch("/api/reservation", {
         method: "POST",
@@ -72,10 +76,26 @@ export default function useReservationForm() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to submit reservation");
+        // エラー処理
+        let errorMessage = 'サーバーエラーが発生しました';
+        
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch {
+          // API がエラーメッセージを返さない場合
+          if (response.status === 400) {
+            errorMessage = 'リクエストに問題があります';
+          } else if (response.status === 500) {
+            errorMessage = 'サーバーで問題が発生しました';
+          }
+        }
+        
+        showError('登録に失敗しました', errorMessage);
+        return;
       }
 
+      // 成功時の処理
       // Zustandストアに保存（LocalStorageは自動的に同期される）
       addReservation({
         ...data,
@@ -91,23 +111,40 @@ export default function useReservationForm() {
       });
 
 
-      // 成功処理
-      toast.success("登録完了！", {
-        description: "事前登録が完了しました。確認メールをご確認ください。",
-      });
+      // 成功バナーを表示
+      showSuccess(
+        '登録が完了しました！',
+        '確認メールをご確認ください',
+      );
 
       reset();
-      router.push("/confirmation");
+
+      // 少し遅延してページ遷移（ユーザーが通知を見る時間を確保）
+      setTimeout(() => {
+        router.push("/confirmation");
+      }, 2000);
 
     } catch (error) {
       console.error("Submission error:", error);
-      toast.error("エラー", {
-        description: "登録中にエラーが発生しました。もう一度お試しください。",
-      });
+
+      // ネットワークエラーバナーを表示
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+      // ネットワークエラー（fetch自体が失敗）
+      showError(
+        'ネットワークエラー',
+        'インターネット接続を確認してください'
+      );
+    } else {
+      // その他のエラー
+        showError(
+          '予期しないエラー',
+          '時間をおいて再度お試しください'
+        );
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [addNotification, addReservation, reset, router]);
+  };
 
   return {
     isLoading,

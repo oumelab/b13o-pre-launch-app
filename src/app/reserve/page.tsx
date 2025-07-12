@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CheckCircle, Loader2 } from "lucide-react";
 import useReservationForm from "./_hooks/use-reservation-form";
+import { useNotificationBanner } from "../hooks/use-notification-banner";
 
 export default function ReservePage() {
   const {
@@ -20,8 +21,50 @@ export default function ReservePage() {
     onSubmit,
   } = useReservationForm();
 
+  // テスト用
+  const { showSuccess, showError } = useNotificationBanner();
+
+
   return (
     <>
+    {/* 開発用テストボタン */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="fixed top-20 right-4 space-y-2 z-50">
+          <div className="bg-slate-800/90 backdrop-blur-sm rounded-lg p-3 space-y-2 border border-slate-600">
+            <p className="text-xs text-slate-300 font-medium">開発用テスト</p>
+            
+            <button
+              onClick={() => showError(
+                '登録に失敗しました',
+                'メールアドレスが既に登録されています'
+              )}
+              className="block w-full px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
+            >
+              エラーバナー
+            </button>
+            
+            <button
+              onClick={() => showSuccess(
+                '登録が完了しました！',
+                '確認メールをご確認ください'
+              )}
+              className="block w-full px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+            >
+              成功バナー
+            </button>
+            
+            <button
+              onClick={() => showError(
+                'ネットワークエラー',
+                'インターネット接続を確認してください'
+              )}
+              className="block w-full px-3 py-1 text-xs bg-orange-600 text-white rounded hover:bg-orange-700"
+            >
+              ネットワークエラー
+            </button>
+          </div>
+        </div>
+      )}
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">

@@ -8,14 +8,15 @@ export default function ConfirmationPage() {
     <>
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="text-center">
-          {/* 成功アイコン */}
-          <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-8">
-            <CheckCircle className="h-10 w-10 text-white" />
-          </div>
 
+            <div className="flex items-baseline justify-center gap-6">
+          <div className="size-12 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-full grid place-content-center">
+            <CheckCircle className="size-7 text-green-400" />
+          </div>
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
             登録が完了しました！
           </h1>
+            </div>
 
           <p className="text-xl text-slate-300 mb-8">
             もくもくReactへの事前登録ありがとうございます🚀

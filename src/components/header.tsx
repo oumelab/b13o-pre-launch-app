@@ -34,7 +34,7 @@ export default function Header() {
 
   return (
     <nav className={cn(
-      "border-b border-slate-800/50 backdrop-blur-sm bg-slate-900/80 z-50",
+      "relative border-b border-slate-800/50 backdrop-blur-sm bg-slate-900/80 z-50",
       shouldBeSticky && "sticky top-0"
     )}
       >
