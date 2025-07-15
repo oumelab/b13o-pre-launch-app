@@ -1,36 +1,44 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Bluberry Mojito 学習プロジェクト - プロダクト事前予約アプリ -
 
-## Getting Started
+架空の新サービス「もくもく React」の事前予約サイトを Next.js + SendGrid で構築する。<br />
+<br />
+React 学習コミュニティ [Blueberry Mojito](https://b13o.com/) の学習プロジェクトです。<br />
+課題の実装の他、個人的な学習目的で私が行った変更や追加機能が含まれています。<br />
 
-First, run the development server:
+> [!NOTE]
+> このリポジトリは、個人的な学習およびデモンストレーションの目的のみに使用されます。<br />
+> This repository is for personal learning and demonstration purposes only.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## ✨ 主な機能
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 基本機能（React Road お題）
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. **プロダクト紹介ページ**： 
+  - もくもく React の特徴を表示するランディングページ
+2. **事前予約フォーム**： 
+  - 名前、メールアドレス、興味のある機能を入力できる。
+  - 新規予約の通知を管理者に送信する。
+3. **メール送信機能**：
+  - 予約確認メールを予約者に送信する。
+4. **予約管理画面**： 
+  - 予約者の一覧と予約数を表示
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 追加で実装した機能, 変更点
+- [x] **予約フォームのカスタムフック化** - フォームのロジックをカスタムフックに移動
+- [x] **テスト** - Bun と React Testing Library を使用したテスト
+- [x] **Zustand導入** - 状態管理ライブラリ
+- [x] **フォーム送信時の通知を変更** - Toast通知 → ヘッダー下にバナー表示
 
-## Learn More
+### 実装予定の機能
+- [ ] SendGrid → Resend への変更
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🛠️ 使用技術
+- Next.js
+- TypeScript
+- Tailwind CSS
+- shadcn/ui
+- React Hook Form
+- Zod
+- SendGrid
+- Zustand
+- Bun Test runner + React Testing Library
