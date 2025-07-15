@@ -51,13 +51,13 @@ export const AdminNavigation = ({
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              size="sm"
-              className="relative text-slate-400 hover:text-white"
+              size="icon"
+              className="relative text-slate-400 hover:text-white hover:bg-slate-700 cursor-pointer"
             >
-              <Bell className="h-5 w-5" />
+              <Bell className="size-6" />
               {/* 未読通知数のバッジ表示 */}
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full size-5 grid place-items-center">
                   {unreadCount}
                 </span>
               )}
@@ -75,14 +75,14 @@ export const AdminNavigation = ({
                   variant="ghost"
                   size="sm"
                   onClick={onMarkAllAsRead}
-                  className="text-xs text-slate-400 hover:text-white h-auto p-1"
+                  className="text-xs text-slate-400 hover:text-white hover:bg-slate-700 h-auto py-1 px-2 rounded-full cursor-pointer"
                 >
                   全て既読
                 </Button>
               )}
             </DropdownMenuLabel>
             <DropdownMenuSeparator className="bg-slate-700" />
-            <div className="max-h-96 overflow-y-auto">
+            <div className="max-h-96 overflow-y-auto space-y-1 pr-1">
               {notifications.length === 0 ? (
                 <div className="p-4 text-center text-slate-400">
                   通知がありません

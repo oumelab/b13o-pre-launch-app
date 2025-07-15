@@ -96,7 +96,7 @@ export const DashboardContent = ({
           </CardHeader>
           <CardContent>
             <div className="text-lg font-bold text-white">
-              {getInterestLabel(stats.mostPopularInterest) || "N/A"}
+              {getInterestLabel(stats.mostPopularInterest) ?? "N/A"}
             </div>
             <p className="text-xs text-slate-400">最も選ばれている</p>
           </CardContent>
@@ -113,7 +113,7 @@ export const DashboardContent = ({
         <CardContent>
           <Table>
             <TableHeader>
-              <TableRow className="border-slate-700">
+              <TableRow className="border-slate-700 hover:bg-slate-700/50">
                 <TableHead className="text-slate-200">名前</TableHead>
                 <TableHead className="text-slate-200">メールアドレス</TableHead>
                 <TableHead className="text-slate-200">興味のある分野</TableHead>
@@ -122,7 +122,7 @@ export const DashboardContent = ({
             </TableHeader>
             <TableBody>
               {paginatedReservations.map((reservation) => (
-                <TableRow key={reservation.id} className="border-slate-700">
+                <TableRow key={reservation.id} className="border-slate-700 hover:bg-slate-700/50">
                   <TableCell className="text-white font-medium">
                     {reservation.name}
                   </TableCell>
@@ -148,6 +148,14 @@ export const DashboardContent = ({
                   </TableCell>
                 </TableRow>
               ))}
+              {/* データがない場合のメッセージ */}
+              {reservations.length === 0 && (
+                <TableRow className="hover:bg-transparent">
+                  <TableCell colSpan={4} className="text-center text-slate-400 py-8">
+                    データがありません
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
 
@@ -159,7 +167,7 @@ export const DashboardContent = ({
                 size="sm"
                 onClick={() => onPageChange(Math.max(currentPage - 1, 1))}
                 disabled={currentPage === 1}
-                className="border-slate-600 text-slate-300"
+                className="border-slate-600 text-slate-300 bg-transparent cursor-pointer hover:bg-slate-700 hover:text-slate-100"
               >
                 前へ
               </Button>
@@ -173,7 +181,7 @@ export const DashboardContent = ({
                   onPageChange(Math.min(currentPage + 1, totalPages))
                 }
                 disabled={currentPage === totalPages}
-                className="border-slate-600 text-slate-300"
+                className="border-slate-600 text-slate-300 bg-transparent cursor-pointer hover:bg-slate-700 hover:text-slate-100"
               >
                 次へ
               </Button>

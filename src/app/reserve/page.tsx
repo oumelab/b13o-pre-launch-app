@@ -26,7 +26,7 @@ export default function ReservePage() {
 
 
   return (
-    <>
+    <div>
     {/* 開発用テストボタン */}
       {process.env.NODE_ENV === 'development' && (
         <div className="fixed top-20 right-4 space-y-2 z-50">
@@ -66,11 +66,11 @@ export default function ReservePage() {
         </div>
       )}
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            もくもくReactに事前登録する
+        <div className="mb-8">
+          <h1 className="text-center text-3xl md:text-4xl font-bold text-white mb-4">
+            もくもくReactに<span className="inline-block">事前登録する</span>
           </h1>
-          <p className="text-slate-300">
+          <p className="text-slate-300 sm:text-center">
             ウェイティングリストに登録し、先行アクセス権とお知らせを受け取りましょう。
           </p>
         </div>
@@ -178,6 +178,6 @@ export default function ReservePage() {
           </CardContent>
         </Card>
       </div>
-    </>
+    </div>
   );
 }

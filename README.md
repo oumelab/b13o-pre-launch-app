@@ -23,6 +23,8 @@ React 学習コミュニティ [Blueberry Mojito](https://b13o.com/) の学習�
 4. **予約管理画面**： 
     - 予約者の一覧と予約数を表示
 
+<br />
+
 ## 追加で実装した機能, 変更点
 
 ### 実装済みの機能, 変更点
@@ -36,6 +38,8 @@ React 学習コミュニティ [Blueberry Mojito](https://b13o.com/) の学習�
 - [ ] 管理者の認証機能 [#2](https://github.com/oumelab/b13o-pre-launch-app/issues/2)
 - [ ] データベースの導入
 - [ ] デプロイ
+
+<br />
 
 ## 使用技術
 - Next.js
