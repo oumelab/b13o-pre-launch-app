@@ -32,12 +32,12 @@ React 学習コミュニティ [Blueberry Mojito](https://b13o.com/) の学習�
 - [x] **テスト** - Bun と React Testing Library を使用したテスト
 - [x] **Zustand導入** - 状態管理ライブラリ
 - [x] **フォーム送信時の通知を変更** - Toast通知 → ヘッダー下にバナー表示
+- [x] **デプロイ** - AWS Amplify Hosting
 
 ### 実装予定の機能
 - [ ] SendGrid → Resend への変更 [#1](https://github.com/oumelab/b13o-pre-launch-app/issues/1)
 - [ ] 管理者の認証機能 [#2](https://github.com/oumelab/b13o-pre-launch-app/issues/2)
 - [ ] データベースの導入
-- [ ] デプロイ
 
 <br />
 
