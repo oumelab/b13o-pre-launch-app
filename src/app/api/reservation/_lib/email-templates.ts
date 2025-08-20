@@ -3,7 +3,7 @@
  *
  * @param name - 予約者の名前
  * @param interests - 選択された興味のある機能の配列
- * @returns SendGrid用のメールオブジェクト
+ * @returns Resend用のメールオブジェクト
  */
 export const createConfirmationEmail = (name: string, interests: string[]) => {
   const text = [
