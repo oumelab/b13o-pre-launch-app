@@ -1,13 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
-import sgMail from "@sendgrid/mail";
+import {NextRequest, NextResponse} from "next/server";
+import {Resend} from "resend";
 import {
   createAdminNotification,
   createConfirmationEmail,
 } from "./_lib/email-templates";
-import { reservationSchema } from "@/lib/schemas";
+import {reservationSchema} from "@/lib/schemas";
 
-// SendGrid API キーを設定
-sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
+// Resend API キーを設定
+const resend = new Resend(process.env.RESEND_API_KEY!);
 
 /**
  * 事前予約を処理するPOSTエンドポイント
@@ -18,19 +18,19 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
 export async function POST(request: NextRequest) {
   try {
     // 必要な環境変数が設定されているかチェック
-    if (!process.env.SENDGRID_API_KEY) {
-      console.error("SENDGRID_API_KEY is not set");
+    if (!process.env.RESEND_API_KEY) {
+      console.error("RESEND_API_KEY is not set");
       return NextResponse.json(
-        { error: "SendGrid API key is not configured" },
-        { status: 500 }
+        {error: "Resend API key is not configured"},
+        {status: 500}
       );
     }
 
-    if (!process.env.SENDGRID_FROM_EMAIL) {
-      console.error("SENDGRID_FROM_EMAIL is not set");
+    if (!process.env.RESEND_FROM_EMAIL) {
+      console.error("RESEND_FROM_EMAIL is not set");
       return NextResponse.json(
-        { error: "SendGrid from email is not configured" },
-        { status: 500 }
+        {error: "Resend from email is not configured"},
+        {status: 500}
       );
     }
 
@@ -44,32 +44,46 @@ export async function POST(request: NextRequest) {
           error: "Validation failed",
           details: validationResult.error.flatten().fieldErrors,
         },
-        { status: 400 }
+        {status: 400}
       );
     }
 
-    const { name, email, interests } = validationResult.data;
+    const {name, email, interests} = validationResult.data;
 
-    // ユーザー向けの予約確認メールを送信
-    const confirmationEmail = createConfirmationEmail(name, interests || []);
-    confirmationEmail.to = email;
+    // ユーザー向けの予約確認メールを送信（Resend）
+    const {html: userHtml, text: userText} = createConfirmationEmail(name, interests || []);
+    const {error: userError} = await resend.emails.send({
+      from: `もくもくReact <${process.env.RESEND_FROM_EMAIL!}>`, // ← Resend検証済みドメインのFromで上書き
+      to: email, // ← 宛先はバリデート済みのユーザー
+      subject: "🎉 もくもくReact事前予約完了のお知らせ",
+      html: userHtml,
+      text: userText,
+    });
+    if (userError) throw userError;
 
-    await sgMail.send(confirmationEmail);
-
-    // 管理者向けの新規予約通知メールを送信
-    const adminNotification = createAdminNotification(
+    // 管理者向けの通知メールを送信（Resend）
+    const {html: adminHtml, text: adminText} = createAdminNotification(
       name,
       email,
       interests || []
     );
-    await sgMail.send(adminNotification);
+    if (process.env.RESEND_ADMIN_EMAIL) {
+      const {error: adminError} = await resend.emails.send({
+        from: `もくもくReact <${process.env.RESEND_FROM_EMAIL!}>`, // ← 送信元は統一
+        to: process.env.RESEND_ADMIN_EMAIL!, // ← 管理者宛先は自由なメールでOK
+        subject: `🔔 新規事前予約: ${name}`,
+        html: adminHtml,
+        text: adminText,
+      });
+      if (adminError) console.error(adminError); // 通知失敗は致命でなければログのみ
+    }
 
     return NextResponse.json({
       message: "Reservation successful and confirmation email sent",
-      data: { name, email, interests },
+      data: {name, email, interests},
     });
   } catch (error) {
-    console.error("SendGrid Error:", error);
+    console.error("Email Error:", error);
 
     return NextResponse.json(
       {
@@ -78,7 +92,7 @@ export async function POST(request: NextRequest) {
         details:
           process.env.NODE_ENV === "development" ? String(error) : undefined,
       },
-      { status: 500 }
+      {status: 500}
     );
   }
 }
