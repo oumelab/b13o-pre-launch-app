@@ -7,12 +7,6 @@
  */
 export const createConfirmationEmail = (name: string, interests: string[]) => {
   return {
-    to: "", // 動的に設定
-    from: {
-      email: process.env.SENDGRID_FROM_EMAIL!,
-      name: "もくもくReact Team",
-    },
-    subject: "🎉 もくもくReact事前予約完了のお知らせ",
     html: `
         <!DOCTYPE html>
         <html>
@@ -70,12 +64,6 @@ export const createAdminNotification = (
   interests: string[]
 ) => {
   return {
-    to: process.env.SENDGRID_FROM_EMAIL!, // 管理者のメール
-    from: {
-      email: process.env.SENDGRID_FROM_EMAIL!,
-      name: "もくもくReact System",
-    },
-    subject: `🔔 新規事前予約: ${name}`,
     html: `
         <!DOCTYPE html>
         <html>
