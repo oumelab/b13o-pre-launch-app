@@ -6,6 +6,16 @@
  * @returns SendGrid用のメールオブジェクト
  */
 export const createConfirmationEmail = (name: string, interests: string[]) => {
+  const text = [
+  `こんにちは、${name}さん！`,
+  "",
+  "もくもくReactの事前予約が完了しました。",
+  "正式ローンチ時には、以下の機能をいち早く体験していただけます：",
+  "",
+  ...(interests ?? []).map((i) => `- ${i}`),
+  "",
+  "ローンチ予定日が近づきましたら、改めてご連絡いたします。",
+].join("\n");
   return {
     html: `
         <!DOCTYPE html>
@@ -43,7 +53,6 @@ export const createConfirmationEmail = (name: string, interests: string[]) => {
                 .join("")}
               
               <p>ローンチ予定日が近づきましたら、改めてご連絡いたします。</p>
-              <p>ご質問がございましたら、このメールに返信してください。</p>
             </div>     
             <div class="footer">
               <p>© 2025 もくもくReact Team. All rights reserved.</p>
@@ -52,6 +61,7 @@ export const createConfirmationEmail = (name: string, interests: string[]) => {
         </body>
         </html>
       `,
+      text: text,
   };
 };
 
@@ -63,6 +73,17 @@ export const createAdminNotification = (
   email: string,
   interests: string[]
 ) => {
+  const text = [
+  "もくもくReact - 新規事前予約通知",
+  "",
+  "予約者情報:",
+  `名前: ${name}`,
+  `メール: ${email}`,
+  `登録日時: ${new Date().toLocaleString("ja-JP")}`,
+  "",
+  "興味のある機能:",
+  ...(interests ?? []).map((i) => `- ${i}`),
+].join("\n");
   return {
     html: `
         <!DOCTYPE html>
@@ -107,5 +128,6 @@ export const createAdminNotification = (
         </body>
         </html>
       `,
+    text: text,
   };
 };

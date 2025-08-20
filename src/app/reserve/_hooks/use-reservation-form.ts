@@ -122,7 +122,7 @@ export default function useReservationForm() {
       // 少し遅延してページ遷移（ユーザーが通知を見る時間を確保）
       setTimeout(() => {
         router.push("/confirmation");
-      }, 2000);
+      }, 500);
 
     } catch (error) {
       console.error("Submission error:", error);
